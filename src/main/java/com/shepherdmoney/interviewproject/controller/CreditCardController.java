@@ -40,7 +40,8 @@ public class CreditCardController {
     }
 
     @PostMapping("/credit-card:update-balance")
-    public SomeEnityData postMethodName(@RequestBody UpdateBalancePayload[] payload) {
+//    public SomeEnityData postMethodName(@RequestBody UpdateBalancePayload[] payload) {
+    public ResponseEntity postMethodName(@RequestBody UpdateBalancePayload[] payload) {
         //TODO: Given a list of transactions, update credit cards' balance history.
         //      1. For the balance history in the credit card
         //      2. If there are gaps between two balance dates, fill the empty date with the balance of the previous date

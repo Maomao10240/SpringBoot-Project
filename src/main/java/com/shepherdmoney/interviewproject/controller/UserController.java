@@ -1,20 +1,37 @@
 package com.shepherdmoney.interviewproject.controller;
 
+import com.shepherdmoney.interviewproject.model.User;
+import com.shepherdmoney.interviewproject.repository.UserRepository;
 import com.shepherdmoney.interviewproject.vo.request.CreateUserPayload;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 public class UserController {
 
     // TODO: wire in the user repository (~ 1 line)
+    private UserRepository userRepository;
+    public UserController(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @PutMapping("/user")
     public ResponseEntity<Integer> createUser(@RequestBody CreateUserPayload payload) {
         // TODO: Create an user entity with information given in the payload, store it in the database
         //       and return the id of the user in 200 OK response
-        return null;
+        User newUser = new User(payload.getName(), payload.getEmail());
+        userRepository.save(newUser);
+
+        return ResponseEntity.ok(newUser.getId());
     }
+
+    @GetMapping("/users")
+    public List<User> getAllUsers(){
+        return userRepository.findAll();
+    }
+
 
     @DeleteMapping("/user")
     public ResponseEntity<String> deleteUser(@RequestParam int userId) {
