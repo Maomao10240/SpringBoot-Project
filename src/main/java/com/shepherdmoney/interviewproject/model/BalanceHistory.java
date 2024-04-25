@@ -2,10 +2,9 @@ package com.shepherdmoney.interviewproject.model;
 
 import java.time.LocalDate;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -25,5 +24,10 @@ public class BalanceHistory {
     private LocalDate date;
 
     private double balance;
-    
+
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonBackReference
+    @JoinColumn(name = "account_id", referencedColumnName = "id")
+    @JsonIgnoreProperties("balanceHistory")
+    private CreditCard creditCard;
 }

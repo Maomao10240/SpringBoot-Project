@@ -57,7 +57,8 @@ public class CreditCard {
     //        4. Deletion of a balance should be fast
     //        5. It is possible that there are gaps in between dates (note the 04-13 and 04-16)
     //        6. In the condition that there are gaps, retrieval of "closest" balance date should also be fast. Aka, given 4-15, return 4-16 entry tuple
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL)
     @OrderBy("date ASC")
+    @JsonIgnore
     private List<BalanceHistory> balanceHistory;
 }
