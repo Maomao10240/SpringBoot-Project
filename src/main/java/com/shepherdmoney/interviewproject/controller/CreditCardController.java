@@ -1,12 +1,19 @@
 package com.shepherdmoney.interviewproject.controller;
 
+import com.shepherdmoney.interviewproject.model.CreditCard;
+import com.shepherdmoney.interviewproject.model.User;
+import com.shepherdmoney.interviewproject.repository.CreditCardRepository;
+import com.shepherdmoney.interviewproject.repository.UserRepository;
 import com.shepherdmoney.interviewproject.vo.request.AddCreditCardToUserPayload;
 import com.shepherdmoney.interviewproject.vo.request.UpdateBalancePayload;
 import com.shepherdmoney.interviewproject.vo.response.CreditCardView;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -15,6 +22,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class CreditCardController {
 
     // TODO: wire in CreditCard repository here (~1 line)
+    private final CreditCardRepository creditCardRepository;
+    private final UserRepository userRepository;
+
+    public CreditCardController(CreditCardRepository creditCardRepository, UserRepository userRepository) {
+        this.creditCardRepository = creditCardRepository;
+        this.userRepository = userRepository;
+    }
 
     @PostMapping("/credit-card")
     public ResponseEntity<Integer> addCreditCardToUser(@RequestBody AddCreditCardToUserPayload payload) {
@@ -22,21 +36,59 @@ public class CreditCardController {
         //       Return 200 OK with the credit card id if the user exists and credit card is successfully associated with the user
         //       Return other appropriate response code for other exception cases
         //       Do not worry about validating the card number, assume card number could be any arbitrary format and length
-        return null;
+
+        Optional<User> findUser = userRepository.findById(payload.getUserId());
+        if (findUser.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        CreditCard newCard = new CreditCard();
+        newCard.setNumber(payload.getCardNumber());
+        newCard.setIssuanceBank(payload.getCardIssuanceBank());
+        newCard.setOwner(findUser.get());
+        creditCardRepository.save(newCard);
+        findUser.get().getCreditCards().add(newCard);
+        userRepository.save(findUser.get());
+        return ResponseEntity.ok(newCard.getId());
     }
+
+
+    @GetMapping("/credit-cards")
+    public List<CreditCard> getAllCards() {
+        // TODO: return a list of all credit card associated with the given userId, using CreditCardView class
+        //       if the user has no credit card, return empty list, never return null
+        //return "eeee";
+        return creditCardRepository.findAll();
+    }
+
 
     @GetMapping("/credit-card:all")
     public ResponseEntity<List<CreditCardView>> getAllCardOfUser(@RequestParam int userId) {
         // TODO: return a list of all credit card associated with the given userId, using CreditCardView class
         //       if the user has no credit card, return empty list, never return null
-        return null;
+        Optional<User> findUser = userRepository.findById(userId);
+        if (findUser.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        if(findUser.get().getCreditCards().isEmpty()) {
+            return ResponseEntity.ok(new ArrayList<>());
+        }
+        List<CreditCardView> cards = new ArrayList<>();
+        findUser.get().getCreditCards().forEach(card -> {
+            CreditCardView view = new CreditCardView(card.getNumber(), card.getIssuanceBank());
+            cards.add(view);
+        });
+        return ResponseEntity.ok(cards);
     }
 
     @GetMapping("/credit-card:user-id")
     public ResponseEntity<Integer> getUserIdForCreditCard(@RequestParam String creditCardNumber) {
         // TODO: Given a credit card number, efficiently find whether there is a user associated with the credit card
         //       If so, return the user id in a 200 OK response. If no such user exists, return 400 Bad Request
-        return null;
+        Optional<User> findUser = creditCardRepository.findByNumber(creditCardNumber);
+        if (findUser.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(findUser.get().getId());
     }
 
     @PostMapping("/credit-card:update-balance")

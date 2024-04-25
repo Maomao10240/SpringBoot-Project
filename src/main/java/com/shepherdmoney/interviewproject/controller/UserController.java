@@ -3,10 +3,12 @@ package com.shepherdmoney.interviewproject.controller;
 import com.shepherdmoney.interviewproject.model.User;
 import com.shepherdmoney.interviewproject.repository.UserRepository;
 import com.shepherdmoney.interviewproject.vo.request.CreateUserPayload;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 public class UserController {
@@ -38,6 +40,13 @@ public class UserController {
         // TODO: Return 200 OK if a user with the given ID exists, and the deletion is successful
         //       Return 400 Bad Request if a user with the ID does not exist
         //       The response body could be anything you consider appropriate
-        return null;
+        Optional<User> find = userRepository.findById(userId);
+        if (find.isPresent()) {
+            userRepository.deleteById(userId);
+            return ResponseEntity.ok("User deleted successfully");
+        }else{
+            return ResponseEntity.notFound().build();
+        }
+
     }
 }
