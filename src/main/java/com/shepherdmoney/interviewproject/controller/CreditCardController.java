@@ -3,6 +3,7 @@ package com.shepherdmoney.interviewproject.controller;
 import com.shepherdmoney.interviewproject.model.BalanceHistory;
 import com.shepherdmoney.interviewproject.model.CreditCard;
 import com.shepherdmoney.interviewproject.model.User;
+import com.shepherdmoney.interviewproject.repository.BalanceHistoryRepository;
 import com.shepherdmoney.interviewproject.repository.CreditCardRepository;
 import com.shepherdmoney.interviewproject.repository.UserRepository;
 import com.shepherdmoney.interviewproject.vo.request.AddCreditCardToUserPayload;
@@ -26,10 +27,12 @@ public class CreditCardController {
     // TODO: wire in CreditCard repository here (~1 line)
     private final CreditCardRepository creditCardRepository;
     private final UserRepository userRepository;
+    private final BalanceHistoryRepository balanceHistoryRepository;
 
-    public CreditCardController(CreditCardRepository creditCardRepository, UserRepository userRepository) {
+    public CreditCardController(CreditCardRepository creditCardRepository, UserRepository userRepository, BalanceHistoryRepository balanceHistoryRepository) {
         this.creditCardRepository = creditCardRepository;
         this.userRepository = userRepository;
+        this.balanceHistoryRepository = balanceHistoryRepository;
     }
 
     @PostMapping("/credit-card")
@@ -104,15 +107,39 @@ public class CreditCardController {
         //      Return 200 OK if update is done and successful, 400 Bad Request if the given card number
         //        is not associated with a card.
         for(UpdateBalancePayload p : payload) {
+            //find user with the card/transaction
             Optional<User> findUser = creditCardRepository.findByNumber(p.getCreditCardNumber());
-            Optional<CreditCard> findCard = creditCardRepository.findCardByNumber(p.getCreditCardNumber());
             if (findUser.isEmpty()) {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid credit card number");
             }
+            //find card with the transaction
+            Optional<CreditCard> findCard = creditCardRepository.findCardByNumber(p.getCreditCardNumber());
+            if (findCard.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid credit card number");
+            }
+            //Create new Balance
             BalanceHistory newBalance = new BalanceHistory();
             newBalance.setDate(p.getBalanceDate());
             newBalance.setBalance(p.getBalanceAmount());
-            findCard.get().getBalanceHistory().add(newBalance);
+            newBalance.setCreditCard(findCard.get());
+            //find the position of the new balance
+            Optional<BalanceHistory> findBalance = balanceHistoryRepository.findBalanceLessOrEqual(p.getBalanceDate(), findCard.get());
+            double diff = 0;
+            if (findBalance.isEmpty()) {
+                diff = p.getBalanceAmount();
+                findCard.get().getBalanceHistory().add(newBalance);
+            }else if(findBalance.get().getDate() == p.getBalanceDate() && findBalance.get().getBalance() == p.getBalanceAmount()){
+                continue;
+            } else {
+                diff = p.getBalanceAmount() -findBalance.get().getBalance();
+                if(findBalance.get().getDate() != p.getBalanceDate()){
+                    findCard.get().getBalanceHistory().add(newBalance);
+                }
+            }
+            if (diff != 0) {
+               balanceHistoryRepository.updateBalanceHistory(findCard.get(),diff,p.getBalanceDate());
+            }
+
             creditCardRepository.save(findCard.get());
 
         }

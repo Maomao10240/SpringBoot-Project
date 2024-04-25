@@ -2,6 +2,7 @@ package com.shepherdmoney.interviewproject.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import net.minidev.json.annotate.JsonIgnore;
 import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDate;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -61,4 +63,13 @@ public class CreditCard {
     @OrderBy("date ASC")
     @JsonIgnore
     private List<BalanceHistory> balanceHistory;
+
+//    @PostConstruct
+//    public void init{
+//        balanceHistory = new LinkedList<>();
+//        BalanceHistory balanceHistory1 = new BalanceHistory();
+//        balanceHistory1.setDate(LocalDate.now());
+//        balanceHistory1.setBalance(0);
+//        balanceHistory.add(balanceHistory1);
+//    }
 }
