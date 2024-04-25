@@ -62,14 +62,9 @@ public class CreditCard {
     @OneToMany(cascade = CascadeType.ALL)
     @OrderBy("date ASC")
     @JsonIgnore
-    private List<BalanceHistory> balanceHistory;
+    private List<BalanceHistory> balanceHistory = new LinkedList<>();
 
-//    @PostConstruct
-//    public void init{
-//        balanceHistory = new LinkedList<>();
-//        BalanceHistory balanceHistory1 = new BalanceHistory();
-//        balanceHistory1.setDate(LocalDate.now());
-//        balanceHistory1.setBalance(0);
-//        balanceHistory.add(balanceHistory1);
-//    }
+
+
+
 }

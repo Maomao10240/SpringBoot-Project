@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -41,16 +42,26 @@ public class CreditCardController {
         //       Return 200 OK with the credit card id if the user exists and credit card is successfully associated with the user
         //       Return other appropriate response code for other exception cases
         //       Do not worry about validating the card number, assume card number could be any arbitrary format and length
-
+        //find whether user exist
         Optional<User> findUser = userRepository.findById(payload.getUserId());
         if (findUser.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+        //set the newCard
         CreditCard newCard = new CreditCard();
         newCard.setNumber(payload.getCardNumber());
         newCard.setIssuanceBank(payload.getCardIssuanceBank());
         newCard.setOwner(findUser.get());
+        //add initial open balance of now as 0, without any transaction
+        BalanceHistory openBalance = new BalanceHistory();
+        openBalance.setDate(LocalDate.now());
+        openBalance.setCreditCard(newCard);
+        openBalance.setBalance(0);
+        balanceHistoryRepository.save(openBalance);
+        //add open balance to the new card
+        newCard.getBalanceHistory().add(openBalance);
         creditCardRepository.save(newCard);
+        //add new card to user
         findUser.get().getCreditCards().add(newCard);
         userRepository.save(findUser.get());
         return ResponseEntity.ok(newCard.getId());
@@ -126,14 +137,20 @@ public class CreditCardController {
             Optional<BalanceHistory> findBalance = balanceHistoryRepository.findBalanceLessOrEqual(p.getBalanceDate(), findCard.get());
             double diff = 0;
             if (findBalance.isEmpty()) {
+                //no prev balance before the payload date: need to add the date
                 diff = p.getBalanceAmount();
                 findCard.get().getBalanceHistory().add(newBalance);
-            }else if(findBalance.get().getDate() == p.getBalanceDate() && findBalance.get().getBalance() == p.getBalanceAmount()){
+            }else if(findBalance.get().getDate().isEqual(p.getBalanceDate()) && findBalance.get().getBalance() == p.getBalanceAmount()){
+                //the data saved in the history is exactly the same with the payload: no need to do anything
                 continue;
             } else {
                 diff = p.getBalanceAmount() -findBalance.get().getBalance();
                 if(findBalance.get().getDate() != p.getBalanceDate()){
+                    //no saved data in the history of that day: need to add that day
                     findCard.get().getBalanceHistory().add(newBalance);
+                }else{
+                    //has data of that day saved in the history, but the amount is different: need to update the amount
+                    balanceHistoryRepository.updateBalanceOfDate(findCard.get(), diff,p.getBalanceDate());
                 }
             }
             if (diff != 0) {
