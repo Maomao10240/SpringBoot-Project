@@ -29,6 +29,7 @@ public class CreditCard {
 
     private String issuanceBank;
 
+    @Column(unique = true)
     private String number;
 
     // TODO: Credit card's owner. For detailed hint, please see User class

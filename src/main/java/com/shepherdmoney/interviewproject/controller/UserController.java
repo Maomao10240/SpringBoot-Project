@@ -23,6 +23,11 @@ public class UserController {
     public ResponseEntity<Integer> createUser(@RequestBody CreateUserPayload payload) {
         // TODO: Create an user entity with information given in the payload, store it in the database
         //       and return the id of the user in 200 OK response
+        //If user email has already exist
+        Optional<User> findUser = userRepository.findByEmail(payload.getEmail());
+        if (findUser.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
         User newUser = new User(payload.getName(), payload.getEmail());
         userRepository.save(newUser);
 

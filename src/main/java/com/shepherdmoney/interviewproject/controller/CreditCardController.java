@@ -153,6 +153,7 @@ public class CreditCardController {
                     balanceHistoryRepository.updateBalanceOfDate(findCard.get(), diff,p.getBalanceDate());
                 }
             }
+            //if difference is not zero
             if (diff != 0) {
                balanceHistoryRepository.updateBalanceHistory(findCard.get(),diff,p.getBalanceDate());
             }
